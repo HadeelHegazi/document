@@ -1,6 +1,5 @@
 {
     "require": {
-        "tecnickcom/tcpdf": "^6.7",
-        "setasign/fpdi": "^2.6"
+        "twilio/sdk": "^8.3"
     }
 }

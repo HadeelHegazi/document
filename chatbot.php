@@ -1,78 +1,41 @@
-<?php
-include 'db_connect.php';
-header('Content-Type: application/json');
 
-try {
-    $request = json_decode(file_get_contents('php://input'), true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception('Invalid JSON input');
-    }
 
-    $userMessage = $request['message'] ?? '';
-    if (empty($userMessage)) {
-        throw new Exception('No message received');
-    }
 
-    // Call OpenAI API
-    $openaiApiKey = 'sk-proj-ogtfQUbJbXOeVVoDWQYpT3BlbkFJoZzFVY1Hdy6SukKQnf4Y';
-    $chatGptEndpoint = 'https://api.openai.com/v1/chat/completions';
 
-    $data = [
-        'model' => 'gpt-4',
-        'messages' => [
-            ['role' => 'system', 'content' => 'You are a helpful legal assistant.'],
-            ['role' => 'user', 'content' => $userMessage],
-        ],
-    ];
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    $options = [
-        'http' => [
-            'header' => "Content-type: application/json\r\nAuthorization: Bearer $openaiApiKey\r\n",
-            'method' => 'POST',
-            'content' => json_encode($data),
-        ],
-    ];
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
-    $context = stream_context_create($options);
-    $response = file_get_contents($chatGptEndpoint, false, $context);
+    <link rel="stylesheet" href="ChatBot.css">
+    <script src="ChatBot.js" defer></script>
 
-    if ($response === false) {
-        throw new Exception('Error calling OpenAI API');
-    }
 
-    $responseData = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception('Invalid JSON response from OpenAI API');
-    }
-
-    $chatGptReply = $responseData['choices'][0]['message']['content'] ?? 'Sorry, no reply available.';
-
-    // Check required documents
-    function checkRequiredDocuments($caseType) {
-        global $conn;
-        $requiredDocs = ['document1.pdf', 'document2.pdf']; // Add logic to determine required documents based on case type
-        $availableDocs = [];
-
-        $qry = $conn->query("SELECT * FROM documents WHERE case_type = '$caseType'");
-        while($row = $qry->fetch_assoc()) {
-            $availableDocs[] = $row['file_name'];
-        }
-
-        $missingDocs = array_diff($requiredDocs, $availableDocs);
-
-        return $missingDocs;
-    }
-
-    // Example usage:
-    $caseType = 'immigration'; // Extract case type from user message or context
-    $missingDocs = checkRequiredDocuments($caseType);
-
-    $missingDocsMessage = count($missingDocs) > 0 ? 'You are missing the following documents: ' . implode(', ', $missingDocs) : 'All required documents are available.';
-
-    echo json_encode(['reply' => $chatGptReply . ' ' . $missingDocsMessage]);
-
-} catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['error' => $e->getMessage()]);
-}
-?>
+    <title>Chatbot</title>
+</head>
+<body>
+    <button class="chatbot-toggler">
+        <span class="material-symbols-outlined">mode_comment</span>
+        <span class="material-symbols-outlined">close</span>
+    </button>
+    <div class="chatbot">
+        <header>
+            <h2>روبوت المحادثة</h2>
+            <span class="chatbotclose-btn material-symbols-outlined">close</span>
+        </header>
+        <ul class="chatbox">
+            <li class="chat incoming">
+                <span class="material-symbols-outlined">smart_toy</span>
+                <p>مرحبًا 👋 <br> كيف يمكنني مساعدتك اليوم؟</p>
+            </li>
+        </ul>
+        <div class="chat-input">
+            <span id="send-btn" class="material-symbols-outlined">send</span>
+            <textarea placeholder="أدخل رسالة..." id="message-input"></textarea>
+        </div>
+    </div>
+</body>
+</html>
